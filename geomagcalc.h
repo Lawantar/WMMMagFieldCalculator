@@ -6,7 +6,13 @@
 #define EARTH_R 6371200.0f
 
 typedef float F_32;
-typedef short int I_16;
+typedef short int SI_16;
+
+typedef struct {
+    F_32 x;
+    F_32 y;
+    F_32 z;
+} Vector;
 
 typedef struct {
     F_32 epoch;
@@ -15,12 +21,6 @@ typedef struct {
     F_32 Secular_Var_Coeff_C[NUMCOF]; // gdmn
     F_32 Secular_Var_Coeff_S[NUMCOF]; // hdmn
 } MagModel;
-
-typedef struct {
-    F_32 x;
-    F_32 y;
-    F_32 z;
-} Vector;
 
 typedef struct {
     F_32 north; // X
@@ -32,19 +32,18 @@ typedef struct {
     F_32 declination; // D
 } Elements;
 
-F_32 GetConstModelC(I_16 n, I_16 m, F_32 dyear);
+F_32 GetConstModelC(SI_16 n, SI_16 m, F_32 dyear);
 
-F_32 GetConstModelS(I_16 n, I_16 m, F_32 dyear);
+F_32 GetConstModelS(SI_16 n, SI_16 m, F_32 dyear);
 
-Vector ConvertGeodeticToEcef(F_32 lat, F_32 lon, F_32 h);
+Vector ConvertGeodeticToEcef(F_32 lat, F_32 lon, F_32 height);
 
 Vector GeoMag(F_32 dyear, Vector position);
 
-Elements ConvertMagFieldToElements(Vector mag_field, F_32 lat, F_32 lon);
+Elements GetMagFieldElements(F_32 dyear, F_32 lat, F_32 lon, F_32 height);
 
-/**
- * Денормализованные коэффициенты WMM2020
- */
+// Денормализованные коэффициенты WMM2020
+
 static const MagModel WMM2020 =
         {2020.0f,
          {0.0f, -29404.5f, -2500.0f, 1363.9f, 903.1f, -234.4f, 65.9f, 80.6f, 23.6f, 5.0f, -1.9f, 3.0f, -2.0f, -1450.7,

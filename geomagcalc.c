@@ -1,24 +1,23 @@
 #include "geomagcalc.h"
 #include "math.h"
 
-F_32 GetConstModelC(I_16 n, I_16 m, F_32 dyear) {
-    I_16 index = (m * (2 * NMAX - m + 1)) / 2 + n;
+F_32 GetConstModelC(SI_16 n, SI_16 m, F_32 dyear) {
+    SI_16 index = (m * (2 * NMAX - m + 1)) / 2 + n;
     return WMM2020.Main_Field_Coeff_C[index] + (dyear - WMM2020.epoch) * WMM2020.Secular_Var_Coeff_C[index];
 }
 
-F_32 GetConstModelS(I_16 n, I_16 m, F_32 dyear) {
-    I_16 index = (m * (2 * NMAX - m + 1)) / 2 + n;
+F_32 GetConstModelS(SI_16 n, SI_16 m, F_32 dyear) {
+    SI_16 index = (m * (2 * NMAX - m + 1)) / 2 + n;
     return WMM2020.Main_Field_Coeff_S[index] + (dyear - WMM2020.epoch) * WMM2020.Secular_Var_Coeff_S[index];
 }
 
-/** Возвращает положение в координатах ITRS (метры)
- * Аргументы:
- * lat - Широта в градусах
- * lon - Долгота в градусах
- * h - Выоста над поверхностью в системе WGS 84 ellipsoid в метрах
-**/
+// Возвращает положение в координатах ITRS (метры)
+// Аргументы:
+// lat - Широта в градусах
+// lon - Долгота в градусах
+// height - Выоста над поверхностью в системе WGS 84 ellipsoid в метрах
 
-Vector ConvertGeodeticToEcef(F_32 lat, F_32 lon, F_32 h) {
+Vector ConvertGeodeticToEcef(F_32 lat, F_32 lon, F_32 height) {
     Vector position;
     F_32 phi = lat * ((F_32) (M_PI / 180.0));
     F_32 lam = lon * ((F_32) (M_PI / 180.0));
@@ -30,19 +29,18 @@ Vector ConvertGeodeticToEcef(F_32 lat, F_32 lon, F_32 h) {
     F_32 slam = sinf(lam);
     F_32 clam = cosf(lam);
     F_32 n = a / sqrtf(1.0f - e2 * (sphi * sphi));
-    F_32 z = (e2m * n + h) * sphi;
-    F_32 r = (n + h) * cphi;
+    F_32 z = (e2m * n + height) * sphi;
+    F_32 r = (n + height) * cphi;
     position.x = r * clam;
     position.y = r * slam;
     position.z = z;
     return position;
 }
 
-/** Возвращает вектор магнитного поля в ITRS (нТл)
- * Аргументы:
- * dyear - Дата в виде десятичной дроби (2020.0 - 1 января 2020 или 2022.5 - 1 июля 2022)
- * position - Положение в координатах ITRS
-**/
+// Возвращает вектор магнитного поля в ITRS (нТл)
+// Аргументы:
+// dyear - Дата в виде десятичной дроби (2020.0 - 1 января 2020 или 2022.5 - 1 июля 2022)
+// position - Положение в координатах ITRS
 
 Vector GeoMag(F_32 dyear, Vector position) {
     Vector GeoMag;
@@ -59,7 +57,7 @@ Vector GeoMag(F_32 dyear, Vector position) {
     F_32 f = z * temp;
     F_32 g = EARTH_R * temp;
 
-    I_16 n, m;
+    SI_16 n, m;
     F_32 Vtop = EARTH_R / sqrtf(rsqrd);
     F_32 Wtop = 0.0f;
     F_32 Vprev = 0.0f;
@@ -111,17 +109,19 @@ Vector GeoMag(F_32 dyear, Vector position) {
     return GeoMag;
 }
 
-/** Возвращает элементы магнитного поля (X,Y,Z,H,F,I,D) в нТл и градусах
- * Аргументы:
- * mag_field - Вектор магнитного поля в ITRS
- * lat - Широта в градусах
- * lon - Долгота в градусах
-**/
+// Возвращает элементы магнитного поля (X,Y,Z,H,F,I,D) в нТл и градусах
+// Аргументы:
+// dyear - Дата в виде десятичной дроби (2020.0 - 1 января 2020 или 2022.5 - 1 июля 2022)
+// lat - Широта в градусах
+// lon - Долгота в градусах
+// height - Выоста над поверхностью в системе WGS 84 ellipsoid в метрах
 
-Elements ConvertMagFieldToElements(Vector mag_field, F_32 lat, F_32 lon) {
+Elements GetMagFieldElements(F_32 dyear, F_32 lat, F_32 lon, F_32 height) {
+    Vector position = ConvertGeodeticToEcef(lat, lon, height);
+    Vector mag_field = GeoMag(dyear, position);
     Elements MagFieldElements;
-    F_32 phi = lat * ((F_32) (M_PI / 180.0));
-    F_32 lam = lon * ((F_32) (M_PI / 180.0));
+    F_32 phi = lat * ((F_32) (M_PI / 180.0f));
+    F_32 lam = lon * ((F_32) (M_PI / 180.0f));
     F_32 x1 = cosf(lam) * mag_field.x + sinf(lam) * mag_field.y;
     F_32 north = -sinf(phi) * x1 + cosf(phi) * mag_field.z;
     F_32 east = -sinf(lam) * mag_field.x + cosf(lam) * mag_field.y;
@@ -132,7 +132,7 @@ Elements ConvertMagFieldToElements(Vector mag_field, F_32 lat, F_32 lon) {
     MagFieldElements.vertical = vertical;
     MagFieldElements.horizontal = horizontal;
     MagFieldElements.total = sqrtf(horizontal * horizontal + vertical * vertical);
-    MagFieldElements.inclination = atan2f(vertical, horizontal) * ((F_32) (180.0 / M_PI));
-    MagFieldElements.declination = atan2f(east, north) * ((F_32) (180.0 / M_PI));
+    MagFieldElements.inclination = atan2f(vertical, horizontal) * ((F_32) (180.0f / M_PI));
+    MagFieldElements.declination = atan2f(east, north) * ((F_32) (180.0f / M_PI));
     return MagFieldElements;
 }

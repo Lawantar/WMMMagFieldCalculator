@@ -3,17 +3,15 @@
 
 int main() {
     float h = 100000.0f;
-    float lat = 55.031667f;
-    float lon = 82.927778f;
-    float dyear = 2024.49f;
-    Vector position = ConvertGeodeticToEcef(lat, lon, h);
-    Vector mag_field = GeoMag(dyear, position);
-    Elements out = ConvertMagFieldToElements(mag_field, lat, lon);
-    printf("Declination (deg): %f\n", out.declination);
-    printf("Inclination (deg): %f\n", out.inclination);
-    printf("Horizontal Intensity (nT): %f\n", out.horizontal);
-    printf("North Comp - X (nT): %f\n", out.north);
-    printf("East Comp - Y (nT): %f\n", out.east);
-    printf("Vertical Comp - Z (nT): %f\n", out.vertical);
-    printf("Total Field (nT): %f\n", out.total);
+    float lat = 0.0f;
+    float lon = 120.0f;
+    float dyear = 2022.5f;
+    Elements test = GetMagFieldElements(dyear, lat, lon, h);
+    printf("Declination (deg): %f\n", test.declination);
+    printf("Inclination (deg): %f\n", test.inclination);
+    printf("Horizontal Intensity (nT): %f\n", test.horizontal);
+    printf("North Comp - X (nT): %f\n", test.north);
+    printf("East Comp - Y (nT): %f\n", test.east);
+    printf("Vertical Comp - Z (nT): %f\n", test.vertical);
+    printf("Total Field (nT): %f\n", test.total);
 }
