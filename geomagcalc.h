@@ -6,6 +6,7 @@
 #define EARTH_R 6371200.0f
 
 typedef float F_32;
+typedef unsigned long int UI_32;
 typedef short int SI_16;
 
 typedef struct {
@@ -22,15 +23,7 @@ typedef struct {
     F_32 Secular_Var_Coeff_S[NUMCOF]; // hdmn
 } MagModel;
 
-typedef struct {
-    F_32 north; // X
-    F_32 east; // Y
-    F_32 vertical; // Z
-    F_32 horizontal; // H
-    F_32 total; // F
-    F_32 inclination; // I
-    F_32 declination; // D
-} Elements;
+F_32 ConvertSecsToDecimalYear(UI_32 secs);
 
 F_32 GetConstModelC(SI_16 n, SI_16 m, F_32 dyear);
 
@@ -40,7 +33,7 @@ Vector ConvertGeodeticToEcef(F_32 lat, F_32 lon, F_32 height);
 
 Vector GeoMag(F_32 dyear, Vector position);
 
-Elements GetMagFieldElements(F_32 dyear, F_32 lat, F_32 lon, F_32 height);
+Vector GetMagFieldElements(F_32 dyear, F_32 lat, F_32 lon, F_32 height);
 
 // Денормализованные коэффициенты WMM2020
 

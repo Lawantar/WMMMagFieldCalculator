@@ -1,6 +1,14 @@
 #include "geomagcalc.h"
 #include "math.h"
 
+// Возвращает дату в виде десятичной дроби
+// Аргументы:
+// secs - кол-во секунд, прошедших от 01.01.2000
+
+F_32 ConvertSecsToDecimalYear(UI_32 secs){
+    return 2000.0f + (F_32)secs / 31556952.0f;
+}
+
 F_32 GetConstModelC(SI_16 n, SI_16 m, F_32 dyear) {
     SI_16 index = (m * (2 * NMAX - m + 1)) / 2 + n;
     return WMM2020.Main_Field_Coeff_C[index] + (dyear - WMM2020.epoch) * WMM2020.Secular_Var_Coeff_C[index];
@@ -116,23 +124,15 @@ Vector GeoMag(F_32 dyear, Vector position) {
 // lon - Долгота в градусах
 // height - Выоста над поверхностью в системе WGS 84 ellipsoid в метрах
 
-Elements GetMagFieldElements(F_32 dyear, F_32 lat, F_32 lon, F_32 height) {
+Vector GetMagFieldElements(F_32 dyear, F_32 lat, F_32 lon, F_32 height) {
     Vector position = ConvertGeodeticToEcef(lat, lon, height);
     Vector mag_field = GeoMag(dyear, position);
-    Elements MagFieldElements;
+    Vector MagFieldElements;
     F_32 phi = lat * ((F_32) (M_PI / 180.0f));
     F_32 lam = lon * ((F_32) (M_PI / 180.0f));
     F_32 x1 = cosf(lam) * mag_field.x + sinf(lam) * mag_field.y;
-    F_32 north = -sinf(phi) * x1 + cosf(phi) * mag_field.z;
-    F_32 east = -sinf(lam) * mag_field.x + cosf(lam) * mag_field.y;
-    F_32 vertical = -cosf(phi) * x1 + -sinf(phi) * mag_field.z;
-    F_32 horizontal = sqrtf(north * north + east * east);
-    MagFieldElements.north = north;
-    MagFieldElements.east = east;
-    MagFieldElements.vertical = vertical;
-    MagFieldElements.horizontal = horizontal;
-    MagFieldElements.total = sqrtf(horizontal * horizontal + vertical * vertical);
-    MagFieldElements.inclination = atan2f(vertical, horizontal) * ((F_32) (180.0f / M_PI));
-    MagFieldElements.declination = atan2f(east, north) * ((F_32) (180.0f / M_PI));
+    MagFieldElements.x = -sinf(phi) * x1 + cosf(phi) * mag_field.z;
+    MagFieldElements.y = -sinf(lam) * mag_field.x + cosf(lam) * mag_field.y;
+    MagFieldElements.z = -cosf(phi) * x1 + -sinf(phi) * mag_field.z;
     return MagFieldElements;
 }
